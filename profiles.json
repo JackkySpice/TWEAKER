@@ -1,0 +1,24 @@
+{
+    "active_profile": "default",
+    "profiles": {
+        "default": {
+            "proxy_port": 8080,
+            "apps": {
+                "gemini": {
+                    "enabled": true,
+                    "flag_configs": {}
+                },
+                "copilot": {
+                    "enabled": true,
+                    "flags": [],
+                    "allow_beta": false
+                },
+                "google_labs": {
+                    "enabled": true,
+                    "music_fx_replace": "None",
+                    "bypass_not_found": false
+                }
+            }
+        }
+    }
+}
