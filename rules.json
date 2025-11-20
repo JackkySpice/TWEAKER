@@ -1,0 +1,18 @@
+{
+    "apps": {
+        "gemini": {
+            "enabled": true,
+            "flags": []
+        },
+        "copilot": {
+            "enabled": true,
+            "flags": [],
+            "allow_beta": false
+        },
+        "google_labs": {
+            "enabled": true,
+            "music_fx_replace": "None",
+            "bypass_not_found": false
+        }
+    }
+}
