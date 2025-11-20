@@ -6,6 +6,7 @@ class AITweaker:
     def __init__(self):
         self.rules = {}
         self.gemini_url_pattern = re.compile(r'^https?:\/\/www\.gstatic\.com\/.*m=_b(\?.*)?$', re.S)
+        self.gemini_html_pattern = re.compile(r'^https?:\/\/gemini\.google\.com\/.*', re.S)
         self.copilot_url_pattern = re.compile(r'^https?:\/\/copilot\.microsoft\.com\/c\/api\/start.*')
         self.google_labs_url_pattern = re.compile(r'^https?:\/\/labs\.google\/fx\/_next\/static\/chunks\/pages\/index-.*\.js')
         self.google_labs_json_pattern = re.compile(r'^https?:\/\/labs\.google\/fx\/_next\/data\/.*\.json(\?.*)?$')
@@ -45,6 +46,64 @@ class AITweaker:
             ctx.log.info("Injected Gemini flags into script.")
         except Exception as e:
             ctx.log.error(f"Error modifying Gemini script: {e}")
+
+    def modify_gemini_html(self, flow: http.HTTPFlow) -> None:
+        app = self.rules.get("apps", {}).get("gemini", {})
+        if not app.get("enabled", False):
+            return
+
+        try:
+            content_type = flow.response.headers.get("content-type", "")
+            if "text/html" not in content_type:
+                return
+
+            ctx.log.info(f"Inspecting potential Gemini HTML: {flow.request.url}")
+
+            # CSP bypass: Strip Content-Security-Policy to allow inline script injection
+            if "content-security-policy" in flow.response.headers:
+                del flow.response.headers["content-security-policy"]
+            if "content-security-policy-report-only" in flow.response.headers:
+                del flow.response.headers["content-security-policy-report-only"]
+
+            content = flow.response.get_text()
+            flags = app.get("flags", [])
+            flags_string = json.dumps(flags)
+
+            injection = f"""
+<script>
+(function() {{
+    try {{
+        const ext_flags = {flags_string};
+        let originalGetFlag;
+        Object.defineProperty(window, 'getFlag', {{
+            configurable: true,
+            enumerable: true,
+            get: function() {{
+                return function(id, fallback) {{
+                    if (ext_flags.includes(id)) return true;
+                    if (originalGetFlag) return originalGetFlag.call(window, id, fallback);
+                    return fallback;
+                }};
+            }},
+            set: function(newValue) {{
+                originalGetFlag = newValue;
+            }}
+        }});
+    }} catch (e) {{ console.error("AI Tweaker Injection Error:", e); }}
+}})();
+</script>
+"""
+            # Inject at the beginning of the head, or body if head is missing
+            if "<head>" in content:
+                flow.response.text = content.replace("<head>", "<head>" + injection, 1)
+            elif "<body>" in content:
+                flow.response.text = content.replace("<body>", "<body>" + injection, 1)
+            else:
+                flow.response.text = injection + content
+
+            ctx.log.info("Injected Gemini flags into HTML.")
+        except Exception as e:
+            ctx.log.error(f"Error modifying Gemini HTML: {e}")
 
     def modify_copilot_response(self, flow: http.HTTPFlow) -> None:
         app = self.rules.get("apps", {}).get("copilot", {})
@@ -146,6 +205,9 @@ class AITweaker:
 
         if self.gemini_url_pattern.match(flow.request.url):
             self.modify_gemini_script(flow)
+
+        if self.gemini_html_pattern.match(flow.request.url):
+            self.modify_gemini_html(flow)
 
         if self.copilot_url_pattern.match(flow.request.url):
             self.modify_copilot_response(flow)
