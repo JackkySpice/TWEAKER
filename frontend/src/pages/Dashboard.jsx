@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Play, Square, Activity, Terminal as TerminalIcon, Download } from 'lucide-react';
+import { Play, Square, Activity, Terminal as TerminalIcon, Download, Copy, Check } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [status, setStatus] = useState({ running: false, port: 8080, ip: 'Loading...' });
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const logContainerRef = useRef(null);
 
   useEffect(() => {
@@ -56,6 +57,15 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyLogs = () => {
+    if (logs.length === 0) return;
+    const text = logs.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   return (
@@ -118,9 +128,28 @@ export default function Dashboard() {
 
       {/* Live Logs */}
       <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-lg overflow-hidden flex flex-col h-[500px]">
-        <div className="px-6 py-4 border-b border-gray-700 bg-gray-800/50 flex items-center space-x-2">
-          <TerminalIcon className="w-5 h-5 text-gray-400" />
-          <h3 className="font-medium text-white">Live Logs</h3>
+        <div className="px-6 py-4 border-b border-gray-700 bg-gray-800/50 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <TerminalIcon className="w-5 h-5 text-gray-400" />
+            <h3 className="font-medium text-white">Live Logs</h3>
+          </div>
+          <button
+            onClick={copyLogs}
+            className="flex items-center space-x-1 text-xs px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 transition-colors"
+            title="Copy logs to clipboard"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3 h-3 text-green-400" />
+                <span className="text-green-400">Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3 h-3" />
+                <span>Copy</span>
+              </>
+            )}
+          </button>
         </div>
         <div
           ref={logContainerRef}
