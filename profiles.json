@@ -6,7 +6,68 @@
             "apps": {
                 "gemini": {
                     "enabled": true,
-                    "flag_configs": {}
+                    "flag_configs": {
+                        "45709348": {
+                            "note": "Visual Layout",
+                            "enabled": true
+                        },
+                        "45720836": {
+                            "note": "Rollout switcher",
+                            "enabled": true
+                        },
+                        "45728464": {
+                            "note": "Black sidebar",
+                            "enabled": true
+                        },
+                        "45728377": {
+                            "note": "Chat name at top of chat",
+                            "enabled": true
+                        },
+                        "45711245": {
+                            "note": "My Stuff",
+                            "enabled": true
+                        },
+                        "45663720": {
+                            "note": "Separate activity and settings & help in sidebar",
+                            "enabled": true
+                        },
+                        "45691404": {
+                            "note": "Search tool",
+                            "enabled": true
+                        },
+                        "45707395": {
+                            "note": "Agent mode",
+                            "enabled": true
+                        },
+                        "45715396": {
+                            "note": "Canvas Creative / Dynamic View",
+                            "enabled": true
+                        },
+                        "45715303": {
+                            "note": "Deep Think IMO version",
+                            "enabled": true
+                        },
+                        "45730924": {
+                            "note": "Enables default tools in gem edit/creation page",
+                            "enabled": true
+                        },
+                        "45720638": {
+                            "note": "Alternative prompt box",
+                            "enabled": true
+                        },
+                        "45685834": {
+                            "note": "Prompt power up",
+                            "enabled": true
+                        },
+                        "45428791": {
+                            "note": "Quick follow up",
+                            "enabled": true
+                        },
+                        "45461453": {
+                            "note": "Personalisation Try Now CTA",
+                            "enabled": true
+                        }
+                    }
                 },
                 "copilot": {
                     "enabled": true,

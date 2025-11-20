@@ -67,15 +67,22 @@ async def control_proxy(control: ProxyControl):
         await proxy_manager.start_proxy(control.port)
     elif control.action == "stop":
         await proxy_manager.stop_proxy()
+    else:
+         raise HTTPException(status_code=400, detail="Invalid action")
     return {"status": "ok", "running": proxy_manager.is_running}
 
 @app.get("/config")
 async def get_config():
-    return config_manager.get_active_profile()
+    return config_manager.get_full_config()
 
 @app.post("/config")
 async def update_config(data: ProfileUpdate):
+    if not data.updates:
+        raise HTTPException(status_code=400, detail="No updates provided")
+
     updated_profile = config_manager.update_active_profile(data.updates)
+    if not updated_profile:
+        raise HTTPException(status_code=404, detail="Active profile not found or update failed")
     return updated_profile
 
 @app.get("/cert")

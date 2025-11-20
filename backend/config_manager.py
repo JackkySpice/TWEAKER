@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import collections.abc
 
 PROFILES_FILE = "profiles.json"
 RULES_FILE = "rules.json"
@@ -13,7 +14,23 @@ DEFAULT_PROFILE = {
             "apps": {
                 "gemini": {
                     "enabled": True,
-                    "flag_configs": {}
+                    "flag_configs": {
+                        "45709348": {"note": "Visual Layout", "enabled": True},
+                        "45720836": {"note": "Rollout switcher", "enabled": True},
+                        "45728464": {"note": "Black sidebar", "enabled": True},
+                        "45728377": {"note": "Chat name at top of chat", "enabled": True},
+                        "45711245": {"note": "My Stuff", "enabled": True},
+                        "45663720": {"note": "Separate activity and settings & help in sidebar", "enabled": True},
+                        "45691404": {"note": "Search tool", "enabled": True},
+                        "45707395": {"note": "Agent mode", "enabled": True},
+                        "45715396": {"note": "Canvas Creative / Dynamic View", "enabled": True},
+                        "45715303": {"note": "Deep Think IMO version", "enabled": True},
+                        "45730924": {"note": "Enables default tools in gem edit/creation page", "enabled": True},
+                        "45720638": {"note": "Alternative prompt box", "enabled": True},
+                        "45685834": {"note": "Prompt power up", "enabled": True},
+                        "45428791": {"note": "Quick follow up", "enabled": True},
+                        "45461453": {"note": "Personalisation Try Now CTA", "enabled": True}
+                    }
                 },
                 "copilot": {
                     "enabled": True,
@@ -30,6 +47,19 @@ DEFAULT_PROFILE = {
     }
 }
 
+def deep_update(source, overrides):
+    """
+    Update a nested dictionary or similar mapping.
+    Modify ``source`` in place.
+    """
+    for key, value in overrides.items():
+        if isinstance(value, collections.abc.Mapping) and value:
+            returned = deep_update(source.get(key, {}), value)
+            source[key] = returned
+        else:
+            source[key] = overrides[key]
+    return source
+
 class ConfigManager:
     def __init__(self):
         self.load_profiles()
@@ -42,6 +72,23 @@ class ConfigManager:
             try:
                 with open(PROFILES_FILE, "r") as f:
                     self.profiles_data = json.load(f)
+
+                # Attempt to merge default flags if they don't exist
+                # This is a simple migration helper for existing users
+                active = self.profiles_data.get("active_profile", "default")
+                profile = self.profiles_data.get("profiles", {}).get(active, {})
+                if "apps" in profile and "gemini" in profile["apps"]:
+                    gemini = profile["apps"]["gemini"]
+                    if "flag_configs" not in gemini:
+                        gemini["flag_configs"] = {}
+
+                    defaults = DEFAULT_PROFILE["profiles"]["default"]["apps"]["gemini"]["flag_configs"]
+                    for k, v in defaults.items():
+                        if k not in gemini["flag_configs"]:
+                            gemini["flag_configs"][k] = v
+
+                    self.save_data(PROFILES_FILE, self.profiles_data)
+
             except Exception:
                 self.profiles_data = DEFAULT_PROFILE
 
@@ -53,12 +100,17 @@ class ConfigManager:
         active_name = self.profiles_data.get("active_profile", "default")
         return self.profiles_data["profiles"].get(active_name, DEFAULT_PROFILE["profiles"]["default"])
 
+    def get_full_config(self):
+        return self.profiles_data
+
     def update_active_profile(self, updates):
         active_name = self.profiles_data.get("active_profile", "default")
         if active_name in self.profiles_data["profiles"]:
-            # Deep update logic could go here, but for now we replace/merge top keys
             current = self.profiles_data["profiles"][active_name]
-            current.update(updates)
+
+            # Perform deep update
+            deep_update(current, updates)
+
             self.save_data(PROFILES_FILE, self.profiles_data)
             self.generate_rules_json()
             return current
