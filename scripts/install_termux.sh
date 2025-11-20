@@ -13,7 +13,7 @@ pkg install python nodejs rust binutils build-essential openssl git -y
 
 # Setup Backend
 echo "[+] Setting up Backend..."
-cd ~/AITweaker/app/backend
+cd ~/AITweaker/backend
 # Create virtual env to avoid polluting global
 python -m venv venv
 source venv/bin/activate
@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 # Setup Frontend
 echo "[+] Setting up Frontend..."
-cd ~/AITweaker/app/frontend
+cd ~/AITweaker/frontend
 npm install
 npm run build
 
@@ -29,7 +29,7 @@ npm run build
 echo "[+] Creating runner script..."
 cat <<EOF > ~/start_aitweaker.sh
 #!/bin/bash
-cd ~/AITweaker/app/backend
+cd ~/AITweaker/backend
 source venv/bin/activate
 
 # Start Backend (which also serves Frontend now)

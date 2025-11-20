@@ -90,8 +90,10 @@ export default function Gemini() {
   };
 
   const getGeminiConfig = () => {
-    if (!config) return { enabled: true, flag_configs: {} };
-    const profile = config.profiles[config.active_profile];
+    if (!config || !config.profiles) return { enabled: true, flag_configs: {} };
+    const active = config.active_profile || 'default';
+    const profile = config.profiles[active];
+    if (!profile || !profile.apps) return { enabled: true, flag_configs: {} };
     return profile.apps.gemini || { enabled: true, flag_configs: {} };
   };
 
@@ -99,7 +101,12 @@ export default function Gemini() {
 
   const geminiConfig = getGeminiConfig();
   const flags = Object.entries(geminiConfig.flag_configs || {})
-    .filter(([id, data]) => id.toLowerCase().includes(searchTerm.toLowerCase()) || data.note.toLowerCase().includes(searchTerm.toLowerCase()));
+    .filter(([id, data]) => {
+      const term = searchTerm.toLowerCase();
+      const idMatch = id.toLowerCase().includes(term);
+      const noteMatch = (data.note || "").toLowerCase().includes(term);
+      return idMatch || noteMatch;
+    });
 
   return (
     <div className="space-y-6">

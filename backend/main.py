@@ -98,16 +98,30 @@ async def websocket_logs(websocket: WebSocket):
     except Exception:
         pass
 
-# Mount frontend if available (for production/docker)
-frontend_path = "/app/frontend/dist"
-if os.path.exists(frontend_path):
+# Mount frontend if available (for production/docker/local)
+possible_paths = [
+    "/app/frontend/dist",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
+]
+
+frontend_path = None
+for path in possible_paths:
+    if os.path.exists(path):
+        frontend_path = path
+        break
+
+if frontend_path:
+    # Serve static assets first
+    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_path, "assets")), name="assets")
+
     # Serve index.html for any path that isn't an API route to support React Router
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
-        if full_path.startswith("api") or full_path.startswith("ws") or full_path == "status" or full_path == "control" or full_path == "config" or full_path == "cert":
+        if full_path.startswith("api") or full_path.startswith("ws") or full_path == "status" or full_path == "control" or full_path == "config" or full_path == "cert" or full_path.startswith("assets"):
+             # Let FastAPI handle 404 for API routes or static assets not found
              raise HTTPException(status_code=404, detail="Not Found")
 
-        # Check if file exists in dist (assets, etc)
+        # Check if file exists in dist (e.g. favicon.ico, etc, but not assets as they are mounted)
         file_path = os.path.join(frontend_path, full_path)
         if os.path.exists(file_path) and os.path.isfile(file_path):
             return FileResponse(file_path)

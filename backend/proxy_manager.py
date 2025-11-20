@@ -32,9 +32,10 @@ class ProxyManager:
             )
             self.is_running = True
 
+            loop = asyncio.get_running_loop()
             # Start threads to read logs
-            threading.Thread(target=self._read_stream, args=(self.process.stdout, "INFO"), daemon=True).start()
-            threading.Thread(target=self._read_stream, args=(self.process.stderr, "ERROR"), daemon=True).start()
+            threading.Thread(target=self._read_stream, args=(self.process.stdout, "INFO", loop), daemon=True).start()
+            threading.Thread(target=self._read_stream, args=(self.process.stderr, "ERROR", loop), daemon=True).start()
 
             await self.log_queue.put(f"Proxy started on port {port}")
         except Exception as e:
@@ -48,12 +49,12 @@ class ProxyManager:
             self.is_running = False
             await self.log_queue.put("Proxy stopped")
 
-    def _read_stream(self, stream, level):
+    def _read_stream(self, stream, level, loop):
         """Reads stdout/stderr from the subprocess and puts lines into the async queue."""
         for line in iter(stream.readline, ''):
             if line:
                 # We need to run the async put in a thread-safe way
-                asyncio.run_coroutine_threadsafe(self.log_queue.put(line.strip()), asyncio.get_event_loop())
+                asyncio.run_coroutine_threadsafe(self.log_queue.put(line.strip()), loop)
 
     async def get_logs(self):
         """Generator to stream logs to WebSocket."""
